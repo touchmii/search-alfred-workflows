@@ -141,6 +141,18 @@ class Workflows(object):
                 if item_type in self.INPUT_TYPES:
                     item_config = o.get('config')
                     keyword = item_config.get('keyword')
+
+                    #Plugin user data that uses {var:keyword} to define keywords is 
+                    #stored in the plist file's userconfigurationconfig dictionary, 
+                    #so just iterate through it to find the relevant item and take out the default.
+                    if  "{var:" in keyword:
+                        userconfig = plist_info.get('userconfigurationconfig')
+                        data = keyword.replace('{', '').replace('}', '').split(':')
+                        for uc in userconfig:
+                            if uc.get('variable') == data[1]:
+                                keyword = uc.get('config').get('default')
+                                return
+
                     title = item_config.get('title')
                     text = item_config.get('text')
                     title = title if title else text
@@ -163,7 +175,10 @@ class Workflows(object):
                     'keyb': keyb_list
                 }
         except Exception as e:
-            sys.stderr.write(f"Error: {e} ({name};{plist_path})\n")
+            # In Python, the locals() function returns a dictionary of all local variable 
+            # names and their corresponding values defined in the current scope.
+            if 'name' in locals():
+                sys.stderr.write(f"Error: {e} ({name};{plist_path})\n")
             return None
 
     def _get_workflows_list(self):
